@@ -92,17 +92,6 @@ public class ApiUtils {
         return retrofit;
     }
 
-
-    private static GsonConverterFactory buildUserGsonConverter() {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-
-        // Adding custom deserializer
-        gsonBuilder.registerTypeAdapter(User.class, new UserDeserializer());
-        Gson myGson = gsonBuilder.create();
-
-        return GsonConverterFactory.create(myGson);
-    }
-
     public static AcademyApi getApiService() {
         if (api == null) {
             api = getRetrofit().create(AcademyApi.class);
