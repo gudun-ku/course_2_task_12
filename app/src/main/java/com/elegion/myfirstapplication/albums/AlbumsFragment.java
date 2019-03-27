@@ -14,16 +14,15 @@ import android.view.ViewGroup;
 import com.elegion.myfirstapplication.ApiUtils;
 import com.elegion.myfirstapplication.R;
 import com.elegion.myfirstapplication.album.DetailAlbumFragment;
-import com.elegion.myfirstapplication.model.Albums;
+import com.elegion.myfirstapplication.model.Album;
+
+import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 /**
  * @author Azret Magometov
@@ -39,7 +38,7 @@ public class AlbumsFragment extends Fragment implements SwipeRefreshLayout.OnRef
     @NonNull
     private final AlbumsAdapter mAlbumAdapter = new AlbumsAdapter(new AlbumsAdapter.OnItemClickListener() {
         @Override
-        public void onItemClick(Albums.DataBean album) {
+        public void onItemClick(Album album) {
             getFragmentManager().beginTransaction()
                     .replace(R.id.fragmentContainer, DetailAlbumFragment.newInstance(album))
                     .addToBackStack(DetailAlbumFragment.class.getSimpleName())
@@ -105,12 +104,12 @@ public class AlbumsFragment extends Fragment implements SwipeRefreshLayout.OnRef
                     mRefresher.setRefreshing(false);
                 }
             })
-            .subscribe(new Consumer<Albums>() {
+            .subscribe(new Consumer<List<Album>>() {
                            @Override
-                           public void accept(Albums albums) throws Exception {
+                           public void accept(List<Album> albums) throws Exception {
                                mErrorView.setVisibility(View.GONE);
                                mRecyclerView.setVisibility(View.VISIBLE);
-                               mAlbumAdapter.addData(albums.getData(), true);
+                               mAlbumAdapter.addData(albums, true);
                            }
                        },
                        new Consumer<Throwable>() {
