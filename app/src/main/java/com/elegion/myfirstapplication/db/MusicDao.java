@@ -60,6 +60,9 @@ public interface MusicDao {
     @Query("select * from album where id = :Id")
     Cursor getAlbumWithIdCursor(int Id);
 
+    @Query("select * from album where id = :Id")
+    Album getAlbumWithId(int Id);
+
     @Query("select * from song where id = :Id")
     Cursor getSongWithIdCursor(int Id);
 

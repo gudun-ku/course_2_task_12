@@ -12,13 +12,18 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.elegion.myfirstapplication.ApiUtils;
+import com.elegion.myfirstapplication.App;
 import com.elegion.myfirstapplication.R;
+import com.elegion.myfirstapplication.db.MusicDao;
 import com.elegion.myfirstapplication.model.Album;
+
+import java.util.List;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 public class DetailAlbumFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
@@ -88,6 +93,22 @@ public class DetailAlbumFragment extends Fragment implements SwipeRefreshLayout.
         mSubscription = ApiUtils.getApiService()
             .getAlbum(mAlbum.getId())
             .subscribeOn(Schedulers.io())
+            .doOnSuccess(new Consumer<Album>() {
+                @Override
+                public void accept(Album album) throws Exception {
+                    getMusicDao().insertAlbum(album);
+                }
+            })
+            .onErrorReturn(new Function<Throwable, Album>() {
+                @Override
+                public Album apply(Throwable throwable) throws Exception {
+                    if (ApiUtils.NETWORK_EXCEPTION.contains(throwable.getClass())) {
+                        return getMusicDao().getAlbumWithId(mAlbum.getId());
+                    } else {
+                        return null;
+                    }
+                }
+            })
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSubscribe(new Consumer<Disposable>() {
                 @Override
@@ -124,5 +145,9 @@ public class DetailAlbumFragment extends Fragment implements SwipeRefreshLayout.
     public void onDestroy() {
         mSubscription.dispose();
         super.onDestroy();
+    }
+
+    private MusicDao getMusicDao() {
+        return ((App) getActivity().getApplication()).getDatabase().getMusicDao();
     }
 }
