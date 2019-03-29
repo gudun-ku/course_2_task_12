@@ -10,6 +10,11 @@ import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.List;
 
 import okhttp3.Authenticator;
 import okhttp3.Credentials;
@@ -29,6 +34,12 @@ import retrofit2.converter.gson.GsonConverterFactory;
  */
 
 public class ApiUtils {
+
+    public static final List<Class<? extends java.io.IOException>> NETWORK_EXCEPTION = Arrays.asList(
+            UnknownHostException.class,
+            SocketTimeoutException.class,
+            ConnectException.class
+    );
 
     private static OkHttpClient client;
     private static Retrofit retrofit;

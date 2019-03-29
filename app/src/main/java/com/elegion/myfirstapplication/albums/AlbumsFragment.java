@@ -12,8 +12,10 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.elegion.myfirstapplication.ApiUtils;
+import com.elegion.myfirstapplication.App;
 import com.elegion.myfirstapplication.R;
 import com.elegion.myfirstapplication.album.DetailAlbumFragment;
+import com.elegion.myfirstapplication.db.MusicDao;
 import com.elegion.myfirstapplication.model.Album;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
 /**
@@ -90,6 +93,22 @@ public class AlbumsFragment extends Fragment implements SwipeRefreshLayout.OnRef
 
         mSubscription = ApiUtils.getApiService()
             .getAlbums()
+            .doOnSuccess(new Consumer<List<Album>>() {
+                @Override
+                public void accept(List<Album> albums) throws Exception {
+                    getMusicDao().insertAlbums(albums);
+                }
+            })
+            .onErrorReturn(new Function<Throwable, List<Album>>() {
+                @Override
+                public List<Album> apply(Throwable throwable) throws Exception {
+                    if (ApiUtils.NETWORK_EXCEPTION.contains(throwable.getClass())) {
+                        return getMusicDao().getAlbums();
+                    } else {
+                        return null;
+                    }
+                }
+            })
             .subscribeOn(Schedulers.io())
             .observeOn(AndroidSchedulers.mainThread())
             .doOnSubscribe(new Consumer<Disposable>() {
@@ -127,5 +146,9 @@ public class AlbumsFragment extends Fragment implements SwipeRefreshLayout.OnRef
     public void onDestroy() {
         mSubscription.dispose();
         super.onDestroy();
+    }
+
+    private MusicDao getMusicDao() {
+        return ((App) getActivity().getApplication()).getDatabase().getMusicDao();
     }
 }
