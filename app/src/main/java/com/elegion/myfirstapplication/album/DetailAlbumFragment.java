@@ -14,11 +14,12 @@ import android.view.ViewGroup;
 import com.elegion.myfirstapplication.ApiUtils;
 import com.elegion.myfirstapplication.App;
 import com.elegion.myfirstapplication.R;
+import com.elegion.myfirstapplication.db.AlbumSong;
 import com.elegion.myfirstapplication.db.MusicDao;
 import com.elegion.myfirstapplication.model.Album;
-
+import com.elegion.myfirstapplication.model.Song;
 import java.util.List;
-
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Action;
@@ -26,10 +27,11 @@ import io.reactivex.functions.Consumer;
 import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 
+
 public class DetailAlbumFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
     private static final String ALBUM_KEY = "ALBUM_KEY";
 
-    private Disposable mSubscription;
+    private Disposable mSubscription, mAlbumSubscription, mSongSubscription;
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout mRefresher;
     private View mErrorView;
@@ -90,32 +92,48 @@ public class DetailAlbumFragment extends Fragment implements SwipeRefreshLayout.
 
     private void getAlbum() {
 
+        final MusicDao dao = getMusicDao();
         mSubscription = ApiUtils.getApiService()
             .getAlbum(mAlbum.getId())
-            .subscribeOn(Schedulers.io())
             .doOnSuccess(new Consumer<Album>() {
                 @Override
                 public void accept(Album album) throws Exception {
-                    getMusicDao().insertAlbum(album);
-                }
-            })
-            .onErrorReturn(new Function<Throwable, Album>() {
-                @Override
-                public Album apply(Throwable throwable) throws Exception {
-                    if (ApiUtils.NETWORK_EXCEPTION.contains(throwable.getClass())) {
-                        return getMusicDao().getAlbumWithId(mAlbum.getId());
-                    } else {
-                        return null;
+
+                    dao.insertAlbum(album);
+                    for (Song song: album.getSongs()) {
+                        dao.insertSong(song);
+                        dao.setLinkAlbumSongs(new AlbumSong(0,album.getId(), song.getId()));
                     }
                 }
             })
-            .observeOn(AndroidSchedulers.mainThread())
             .doOnSubscribe(new Consumer<Disposable>() {
                 @Override
                 public void accept(Disposable disposable) throws Exception {
                     mRefresher.setRefreshing(true);
                 }
             })
+            .onErrorReturn(new Function<Throwable, Album>() {
+                @Override
+                public Album apply(Throwable throwable) throws Exception {
+                    if (ApiUtils.NETWORK_EXCEPTION.contains(throwable.getClass())) {
+                        return mAlbum;
+                    } else {
+                        return null;
+                    }
+                }
+            })
+            .flatMap(new Function<Album,Single<Album>>() {
+                @Override
+                public Single<Album> apply(Album album) throws Exception {
+                    if (mAlbum.getSongs() == null) {
+                        return Single.just(getAlbumWithSongsFromDB(mAlbum, dao));
+                    } else {
+                        return Single.just(mAlbum);
+                    }
+                }
+            })
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribeOn(Schedulers.io())
             .doFinally(new Action() {
                 @Override
                 public void run() throws Exception {
@@ -126,9 +144,14 @@ public class DetailAlbumFragment extends Fragment implements SwipeRefreshLayout.
                 new Consumer<Album>() {
                     @Override
                     public void accept(Album album) throws Exception {
-                        mErrorView.setVisibility(View.GONE);
-                        mRecyclerView.setVisibility(View.VISIBLE);
-                        mSongsAdapter.addData(album.getSongs(), true);
+                        if (album.getSongs() == null || album.getSongs().size() == 0) {
+                            mErrorView.setVisibility(View.VISIBLE);
+                            mRecyclerView.setVisibility(View.GONE);
+                        } else {
+                            mErrorView.setVisibility(View.GONE);
+                            mRecyclerView.setVisibility(View.VISIBLE);
+                            mSongsAdapter.addData(album.getSongs(), true);
+                        }
                     }
                 }, new Consumer<Throwable>() {
                     @Override
@@ -140,6 +163,15 @@ public class DetailAlbumFragment extends Fragment implements SwipeRefreshLayout.
             );
 
     }
+
+
+    private Album getAlbumWithSongsFromDB(Album mAlbum, MusicDao dao) {
+        Album album = dao.getAlbumWithId(mAlbum.getId());
+        List <Song> songs = dao.getSongsFromAlbum(mAlbum.getId());
+        album.setSongs(songs);
+        return album;
+    }
+
 
     @Override
     public void onDestroy() {

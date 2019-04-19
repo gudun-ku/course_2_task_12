@@ -39,6 +39,7 @@ public interface MusicDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void setLinkAlbumSongs(AlbumSong linkAlbumSongs);
 
+
     @Query("select * from album")
     List<Album> getAlbums();
 
@@ -79,8 +80,8 @@ public interface MusicDao {
     void deleteAlbumSong(AlbumSong albumsong);
 
     //получить список песен переданного id альбома
-    //@Query("select * from song inner join albumsong on song.id = albumsong.song_id where album_id = :albumId")
-    //List<Song> getSongsFromAlbum(int albumId);
+    @Query("select song.* from song inner join albumsong on song.id = albumsong.song_id where album_id = :albumId")
+    List<Song> getSongsFromAlbum(int albumId);
 
     //обновить информацию об альбоме
     @Update
