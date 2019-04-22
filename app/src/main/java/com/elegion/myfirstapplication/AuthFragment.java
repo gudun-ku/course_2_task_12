@@ -24,6 +24,7 @@ import com.elegion.myfirstapplication.model.User;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
+import io.reactivex.functions.Function;
 import io.reactivex.schedulers.Schedulers;
 import retrofit2.HttpException;
 import retrofit2.Response;
@@ -62,10 +63,11 @@ public class AuthFragment extends Fragment {
                         new Consumer<User>() {
                             @Override
                             public void accept(User user) throws Exception {
-
-                                if (user != null && user instanceof User)
+                                if (user != null && user instanceof User) {
                                     showMessage("Hi again, " + user.getName() + "!");
-
+                                } else {
+                                    showMessage(R.string.msg_no_internet);
+                                }
                                 startActivity(new Intent(activity, AlbumsActivity.class));
                                 getActivity().finish();
                             }
@@ -75,10 +77,14 @@ public class AuthFragment extends Fragment {
                             public void accept(Throwable throwable) throws Exception {
 
                                 //изменим обработку ошибок
-                                Response response = ((HttpException) throwable)
-                                        .response();
-                                ApiError error = ApiUtils.parseError(response,response.code());
-                                highlightErrors(error, activity);
+                                if(throwable instanceof  HttpException) {
+                                    Response response = ((HttpException) throwable)
+                                            .response();
+                                    ApiError error = ApiUtils.parseError(response, response.code());
+                                    highlightErrors(error, activity);
+                                } else {
+                                    showMessage(R.string.msg_no_internet);
+                                }
 
                             }
                         }

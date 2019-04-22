@@ -66,15 +66,19 @@ public class RegistrationFragment extends Fragment {
                                 public void accept(Throwable throwable) throws Exception {
 
                                     //изменим обработку ошибок
-                                    Response response = ((HttpException) throwable)
-                                            .response();
-                                    ApiError error = ApiUtils.parseError(response,response.code());
-                                    highlightErrors(error, activity);
+                                    if(throwable instanceof  HttpException) {
+                                        //изменим обработку ошибок
+                                        Response response = ((HttpException) throwable)
+                                                .response();
+                                        ApiError error = ApiUtils.parseError(response,response.code());
+                                        highlightErrors(error, activity);
+                                    } else {
+                                        showMessage(R.string.msg_no_internet);
+                                    }
 
                                 }
                             }
                         );
-
 
             } else {
                 showMessage(R.string.input_error);

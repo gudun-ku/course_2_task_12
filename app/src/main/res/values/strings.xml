@@ -26,5 +26,6 @@
     <string name="password_validation_error">Длина пароля должна быть не менее 8 символов</string>
     <string name="retyped_password_validation_error">Пароли должны совпадать!</string>
     <string name="username_validation_error">Имя не должно быть пустым!</string>
+    <string name="msg_no_internet">Выключено соединение с сетью</string>
 
 </resources>
